@@ -1,5 +1,0 @@
-2 webservers+ A load balancer (4hr)
-forward Proxy ( 4hr Evgeny)
-FTP server(4hr RaShid)
-DHCP server
-email server (4h)
