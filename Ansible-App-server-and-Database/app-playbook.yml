@@ -1,0 +1,67 @@
+---
+- name: Set up Tomcat application server
+  hosts: ubuntu-b.labnet.io
+  become: true
+  vars_files:
+    - variables.yml
+
+
+  tasks:
+    - name: Installing JDK
+      apt:
+        name: default-jdk
+        state: latest
+
+    - name: Adding group for Tomcat
+      group: 
+        name: tomcat
+        state: present
+
+    - name : Adding user for Tomcat
+      user: 
+        name: tomcat
+        groups: tomcat
+        state: present
+    
+    - name: Downloading Apache Tomcat
+      get_url: 
+        url: https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.54/bin/apache-tomcat-9.0.54.tar.gz
+        dest: /tmp
+    
+    - name: Creating Tomcat home dir
+      file:
+        path: /opt/tomcat
+        state: directory
+        mode: 0755
+
+    - name: Extracting Apache Tomcat
+      unarchive: 
+        src: /tmp/apache-tomcat-9.0.54.tar.gz
+        dest: /opt/tomcat
+        remote_src: yes
+    - name: remove ROOT dir from /webapps
+      file:
+        path: /opt/tomcat/apache-tomcat-9.0.54/webapps/ROOT
+        state: absent
+
+    - name: Deploying API
+      copy:
+        src: /shared/assignment2/business-data-api-0.1.0.war
+        dest: /opt/tomcat/apache-tomcat-9.0.54/webapps/ROOT.war
+        owner: tomcat
+        group: tomcat
+        mode: 0777
+    
+    - name: Template based tomcat context and template for tomcat user
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      with_items:
+        - {src: 'context.xml.j2' ,dest: '/opt/tomcat/apache-tomcat-9.0.54/webapps/host-manager/META-INF/context.xml'}
+        - {src: 'context.xml.j2' ,dest: '/opt/tomcat/apache-tomcat-9.0.54/webapps/manager/META-INF/context.xml'}
+        - {src: 'tomcat-users.xml.j2' ,dest: '/opt/tomcat/apache-tomcat-9.0.54/conf/tomcat-users.xml'}
+        
+    - name: Start Tomcat
+      shell: nohup /opt/tomcat/apache-tomcat-9.0.54/bin/startup.sh
+    
+- import_playbook: database-playbook.yml

@@ -1,0 +1,72 @@
+---
+- name: Set up database server
+  hosts: ubuntu-d.labnet.io
+  become: true
+
+  tasks:
+    
+    - name: Install mysql-server
+      apt:
+        name: mysql-server
+        state: latest
+
+    - name: Install python modules
+      apt:
+        name: python3
+        state: latest
+      
+    - name: Install PyMySQL
+      shell: pip install PyMySQL
+    
+    - name: Copy mysqld.cnf into mySQL config
+      copy: 
+       src: /shared/assignment2/mysqld.cnf
+       dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+
+    - name: Start Mysql
+      service:
+        name: mysql
+        state: started
+    
+    - name: Loging in to db server and create a root user
+      mysql_user:
+        login_user: root
+        login_password: root
+        login_host: localhost
+        login_unix_socket: /var/run/mysqld/mysqld.sock
+        name: root
+        password: root
+        priv: '*.*:ALL,GRANT'
+        host: localhost
+        state: present
+
+
+    - name: Add root user from the tomcat host
+      mysql_user:
+        login_user: root
+        login_password: root
+        name: root
+        password: root
+        host: ubuntu-b.labnet.io
+        priv: '*.*:ALL,GRANT'
+        state: present
+        
+        
+    - name: Add the Nortwind database
+      copy:
+        src: Northwind_Database.sql
+        dest: /tmp
+
+    - name: Restore database
+      mysql_db:
+        name: northwind
+        state: import
+        target: /tmp/Northwind_Database.sql
+        login_user: root
+        login_password: root
+
+
+
+
+
+    

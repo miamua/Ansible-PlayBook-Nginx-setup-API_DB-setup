@@ -1,0 +1,31 @@
+---
+- name: set up a custom NGINX
+  hosts: webservers
+  become: true
+  vars_files:
+    - variables.yml
+  tasks:
+    - name: ensure latest version & install nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: Unarchive a file
+      unarchive:
+        src: /shared/assignment1/e-shop-client.tar.gz
+        dest: /var/www/html/
+
+    - name: Template based content 
+      template:
+        src: default.j2
+        dest: /var/www/html/index.nginx-debian.html
+      notify: restart nginx
+  
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+    
+    
+    
